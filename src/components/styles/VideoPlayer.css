@@ -1,0 +1,33 @@
+.video-player {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+
+  video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: contain;
+    background: #333;
+  }
+
+  .back {
+    display: none;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(80, 80, 80, 0.5);
+    }
+  }
+
+  &:hover .back {
+    display: flex;
+  }
+}
