@@ -9,7 +9,8 @@ import "./index.css";
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_zrTYaJ2yz",
   client_id: "6hvkjdauc0gspl7mtlmt4ns0nt",
-  redirect_uri: "http://localhost:5173/",
+  //redirect_uri: "http://localhost:5173/",
+   redirect_uri: "https://skydrive.onkaarkale.workers.dev/",
   response_type: "code",
   scope: "email openid phone",
 };
