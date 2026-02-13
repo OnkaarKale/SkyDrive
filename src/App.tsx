@@ -3,7 +3,7 @@ import { Toaster, toast } from "react-hot-toast";
 import { useUser } from "@/hooks/useUser";
 import type { ReactElement } from "react";
 
-import Landing from "@pages/Landing";
+import Landing from "@/pages/Landing";
 import Home from "@pages/Home";
 import Watch from "@pages/Watch";
 
