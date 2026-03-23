@@ -71,9 +71,9 @@ function LiveStreams() {
         const hls = new Hls();
         hls.loadSource(selectedStream.playbackUrl);
         hls.attachMedia(videoRef.current);
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error("HLS.js error:", data);
-        });
+       hls.on(Hls.Events.ERROR, (_, data) => {
+  console.error("HLS.js error:", data);
+});
         return () => {
           hls.destroy();
         };
