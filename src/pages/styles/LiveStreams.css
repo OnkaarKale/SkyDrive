@@ -1,0 +1,105 @@
+/* Page background */
+.container {
+  background-color: #0a1f44; /* dark blue */
+  min-height: 100vh;
+  padding: 40px;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Page title */
+.container h2 {
+  text-align: center;
+  font-size: 2.2rem;
+  margin-bottom: 30px;
+  color: #f0f8ff;
+  letter-spacing: 1px;
+}
+
+/* No streams message */
+.container p {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #a0c4ff;
+}
+
+/* Card grid */
+.stream-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+/* Individual stream card */
+.stream-card {
+  background: #112b58;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* Hover effect */
+.stream-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.7);
+}
+
+/* Stream title */
+.stream-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: #ffffff;
+  text-align: center;
+}
+
+/* Category badge */
+.stream-card .category {
+  margin-bottom: 10px;
+  padding: 4px 10px;
+  background-color: #1f4e8a;
+  color: #ffffff;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Streamer info */
+.stream-card p {
+  font-size: 1rem;
+  color: #b0cfff;
+  margin-bottom: 12px;
+}
+
+/* Thumbnail styling */
+.stream-thumbnail {
+  width: 100%;
+  border-radius: 10px;
+  border: 2px solid #3a6ea5;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.stream-thumbnail:hover {
+  transform: scale(1.03);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px;
+  }
+
+  .stream-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .stream-card p {
+    font-size: 0.95rem;
+  }
+}

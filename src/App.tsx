@@ -10,7 +10,7 @@ import Watch from "@pages/Watch";
 import LiveStreams from "@pages/LiveStreams";
 import StreamDashboard from "@pages/StreamDashboard";
 import GoLiveForm from "@pages/GoLiveForm";
-
+import StreamPlayer from "@pages/StreamPlayer";
 // Protected Route wrapper
 function ProtectedRoute({ element }: { element: ReactElement }) {
   const { isAuthenticated } = useUser();
@@ -58,6 +58,8 @@ export default function App() {
           path="/stream/:streamId"
           element={<ProtectedRoute element={<StreamDashboard />} />}
         />
+
+        <Route path="/stream/:streamId" element={<StreamPlayer />} />
       </Routes>
     </>
   );

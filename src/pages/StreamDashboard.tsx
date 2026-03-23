@@ -1,247 +1,143 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
-import { ChatRoom } from "amazon-ivs-chat-messaging";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import "./styles/StreamDashboard.css";
 
 function StreamDashboard() {
-
   const { streamId } = useParams();
-
-  const API_BASE =
-    "https://2bjtydde2g.execute-api.us-east-1.amazonaws.com/prod";
+  const navigate = useNavigate();
+  const API_BASE = "https://2bjtydde2g.execute-api.us-east-1.amazonaws.com/prod";
 
   const [stream, setStream] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [messageInput, setMessageInput] = useState("");
-  const [chatRoom, setChatRoom] = useState<any>(null);
   const [videoKey, setVideoKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-
-  const chatBottomRef = useRef<HTMLDivElement | null>(null);
+  const [viewerCount, setViewerCount] = useState<number>(0);
 
   // -----------------------------
   // Fetch stream details
   // -----------------------------
   const fetchStream = async () => {
-
     try {
-
-      const res = await fetch(
-        `${API_BASE}/get-stream?streamId=${streamId}`
-      );
-
+      const res = await fetch(`${API_BASE}/get-stream?streamId=${streamId}`);
       let data = await res.json();
-
-      if (typeof data.body === "string") {
-        data = JSON.parse(data.body);
-      }
-
+      if (typeof data.body === "string") data = JSON.parse(data.body);
       setStream(data);
 
+      if (data.viewerCount !== undefined) setViewerCount(data.viewerCount);
     } catch (err) {
       console.error("Stream fetch error:", err);
     }
   };
 
   // -----------------------------
-  // Refresh button
+  // Refresh Stream
   // -----------------------------
   const refreshStream = async () => {
-
     setRefreshing(true);
-
     await fetchStream();
-
     setVideoKey(prev => prev + 1);
-
     setRefreshing(false);
   };
 
   // -----------------------------
-  // Connect to IVS chat
+  // Delete Stream
   // -----------------------------
-  const connectChat = async () => {
-
-    try {
-
-      const res = await fetch(
-        `${API_BASE}/get-chat-token?streamId=${streamId}&userId=viewer`
-      );
-
-      let data = await res.json();
-
-      if (typeof data.body === "string") {
-        data = JSON.parse(data.body);
-      }
-
-      const token = data.token;
-
-      if (!token) {
-        console.error("Chat token missing");
-        return;
-      }
-
-      const room = new ChatRoom({
-        region: "us-east-1",
-        token: token
-      });
-
-      room.on("message", (event: any) => {
-
-        setMessages(prev => [
-          ...prev,
-          {
-            user: event.sender?.userId,
-            text: event.content
-          }
-        ]);
-
-      });
-
-      await room.connect();
-
-      setChatRoom(room);
-
-      console.log("Chat connected");
-
-    } catch (err) {
-      console.error("Chat connection error:", err);
-    }
-  };
-
   // -----------------------------
-  // Send message
-  // -----------------------------
-  const sendMessage = async () => {
+// Delete Stream
+// -----------------------------
+const deleteStream = async () => {
+  if (!window.confirm("Are you sure you want to delete this stream?")) return;
 
-    if (!chatRoom) {
-      console.log("Chat not connected yet");
-      return;
-    }
-
-    if (messageInput.trim() === "") return;
-
-    try {
-
-      await chatRoom.sendMessage(messageInput);
-
-      setMessageInput("");
-
-    } catch (err) {
-      console.error("Send message error:", err);
-    }
-  };
-
-  // -----------------------------
-  // Auto scroll chat
-  // -----------------------------
-  useEffect(() => {
-
-    chatBottomRef.current?.scrollIntoView({
-      behavior: "smooth"
+  try {
+    const res = await fetch(`${API_BASE}/delete-stream`, {
+      method: "POST",           // Keep POST as per your API
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ streamId }) // Send the streamId in body
     });
 
-  }, [messages]);
+    // Lambda always returns JSON
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Stream deleted successfully");
+      navigate("/home"); // redirect to home page
+    } else {
+      alert("Failed to delete stream: " + (data.message || data.error || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Delete error:", err);
+    alert("Error deleting stream");
+  }
+};
 
   // -----------------------------
-  // Initial load
+  // Copy to Clipboard
+  // -----------------------------
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => alert("Copied to clipboard"))
+      .catch(err => console.error("Copy failed:", err));
+  };
+
+  // -----------------------------
+  // Auto refresh
   // -----------------------------
   useEffect(() => {
-
     fetchStream();
-    connectChat();
-
     const interval = setInterval(fetchStream, 3000);
-
-    return () => {
-
-      clearInterval(interval);
-
-      if (chatRoom) {
-        chatRoom.disconnect();
-      }
-
-    };
-
+    return () => clearInterval(interval);
   }, []);
 
   if (!stream) return <h2>Loading stream...</h2>;
 
   return (
-
-    <div style={{ padding: "20px" }}>
-
+    <div className="container">
       <h1>{stream.title}</h1>
 
       <h3>Live Preview</h3>
-
-      {stream.playbackUrl ? (
-
-        <video
-          key={videoKey}
-          src={stream.playbackUrl}
-          controls
-          autoPlay
-          width="700"
-        />
-
-      ) : (
-        <p>Start streaming from OBS to see preview</p>
-      )}
-
-      <br />
+      <div className="video-container">
+        {stream.playbackUrl ? (
+          <video key={videoKey} src={stream.playbackUrl} controls autoPlay width="700" />
+        ) : (
+          <p>Start streaming from OBS to see preview</p>
+        )}
+      </div>
 
       <button onClick={refreshStream} disabled={refreshing}>
-
         {refreshing ? "Refreshing..." : "Refresh Stream"}
+      </button>
 
+      <button
+        onClick={deleteStream}
+        style={{ backgroundColor: "#e53935", marginLeft: "10px" }}
+      >
+        Delete Stream
       </button>
 
       <h3>Stream Details</h3>
-
-      <p><b>Stream ID:</b> {stream.streamId}</p>
-      <p><b>RTMP URL:</b> {stream.rtmpUrl}</p>
-      <p><b>Stream Key:</b> {stream.streamKey}</p>
-      <p><b>Playback URL:</b> {stream.playbackUrl}</p>
-
-      <h3>Live Chat</h3>
-
-      <div
-        style={{
-          border: "1px solid #ccc",
-          height: "300px",
-          overflowY: "scroll",
-          padding: "10px",
-          marginBottom: "10px"
-        }}
-      >
-
-        {messages.map((msg, index) => (
-
-          <div key={index}>
-            <b>{msg.user}</b>: {msg.text}
-          </div>
-
-        ))}
-
-        <div ref={chatBottomRef}></div>
-
+      <div className="details">
+        <p>
+          <b>Stream ID:</b> {stream.streamId}
+          <button onClick={() => copyToClipboard(stream.streamId)} style={{ marginLeft: "5px" }}>Copy</button>
+        </p>
+        <p>
+          <b>RTMP URL:</b> {stream.rtmpUrl}
+          <button onClick={() => copyToClipboard(stream.rtmpUrl)} style={{ marginLeft: "5px" }}>Copy</button>
+        </p>
+        <p>
+          <b>Stream Key:</b> {stream.streamKey}
+          <button onClick={() => copyToClipboard(stream.streamKey)} style={{ marginLeft: "5px" }}>Copy</button>
+        </p>
+        <p>
+          <b>Playback URL:</b> {stream.playbackUrl}
+          <button onClick={() => copyToClipboard(stream.playbackUrl)} style={{ marginLeft: "5px" }}>Copy</button>
+        </p>
       </div>
 
-      <input
-        value={messageInput}
-        onChange={(e) => setMessageInput(e.target.value)}
-        placeholder="Type message"
-        style={{ width: "70%", marginRight: "10px" }}
-      />
-
-      <button onClick={sendMessage}>
-        Send
-      </button>
-
+      <div className="live-count">
+        Live Viewers: {viewerCount}
+      </div>
     </div>
-
   );
-
 }
 
 export default StreamDashboard;

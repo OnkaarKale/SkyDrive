@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import "./styles/Home.css";
 
 function Home() {
   const navigate = useNavigate();
@@ -11,22 +12,27 @@ function Home() {
   const [visibility] = useState("public");
   const [loading, setLoading] = useState(false);
 
-  const API_BASE =
-    "https://2bjtydde2g.execute-api.us-east-1.amazonaws.com/prod";
+  const API_BASE = "https://2bjtydde2g.execute-api.us-east-1.amazonaws.com/prod";
 
-  // Get username from localStorage
+  // ✅ Get username from Cognito sessionStorage
   const getUsername = () => {
     try {
-      const sessionKey = Object.keys(localStorage).find((k) =>
-        k.startsWith("session")
+      const key = Object.keys(sessionStorage).find((k) =>
+        k.startsWith("oidc.user")
       );
+      if (!key) return "";
 
-      if (!sessionKey) return "";
+      const session = JSON.parse(sessionStorage.getItem(key) || "{}");
+      const payload = JSON.parse(atob(session.id_token.split(".")[1]));
 
-      const session = JSON.parse(localStorage.getItem(sessionKey) || "{}");
-
-      return session?.username || "";
-    } catch {
+      return (
+        payload["preferred_username"] ||
+        payload["cognito:username"] ||
+        payload.email ||
+        ""
+      );
+    } catch (err) {
+      console.error("Error getting username:", err);
       return "";
     }
   };
@@ -35,21 +41,13 @@ function Home() {
     setUsername(getUsername());
   }, []);
 
-  // Poll stream until IVS channel ready
+  // Poll stream until RTMP is ready
   const pollStream = (streamId: string) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(
-          `${API_BASE}/get-stream?streamId=${streamId}`
-        );
-
+        const res = await fetch(`${API_BASE}/get-stream?streamId=${streamId}`);
         let data = await res.json();
-
-        if (typeof data.body === "string") {
-          data = JSON.parse(data.body);
-        }
-
-        console.log("Polling stream:", data);
+        if (typeof data.body === "string") data = JSON.parse(data.body);
 
         if (data && data.rtmpUrl) {
           clearInterval(interval);
@@ -70,51 +68,30 @@ function Home() {
     setLoading(true);
 
     try {
-      // STEP 1: Create stream
       const res = await fetch(`${API_BASE}/create-stream`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
           description,
           category,
           visibility,
-          userId: username || "demo-user"
-        })
+          userId: username || "demo-user",
+        }),
       });
 
       let data = await res.json();
-
-      if (typeof data.body === "string") {
-        data = JSON.parse(data.body);
-      }
-
-      console.log("Create stream response:", data);
+      if (typeof data.body === "string") data = JSON.parse(data.body);
 
       const streamId = data.streamId;
-
       if (!streamId) {
         alert("Stream creation failed");
         setLoading(false);
         return;
       }
 
-      // STEP 2: Create chat room
-      await fetch(`${API_BASE}/create-chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          streamId: streamId
-        })
-      });
+      // ✅ Removed chat creation completely
 
-      console.log("Chat room created");
-
-      // STEP 3: Poll stream
       pollStream(streamId);
     } catch (err) {
       console.error("Create stream error:", err);
@@ -125,44 +102,37 @@ function Home() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div className="container">
       <h1>SkyStream</h1>
-
       <p>Welcome, {username}</p>
 
       <h2>Start a Stream</h2>
-
       <input
         placeholder="Stream title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-
       <br /><br />
-
       <textarea
         placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-
       <br /><br />
-
       <input
         placeholder="Category"
         value={category}
         onChange={(e) => setCategory(e.target.value)}
       />
-
       <br /><br />
-
       <button onClick={createStream} disabled={loading}>
         {loading ? "Creating Stream..." : "Create Stream"}
       </button>
-
       <br /><br />
-
-      <button onClick={() => navigate("/watch-streams")}>
+      <button
+        className="secondary-btn"
+        onClick={() => navigate("/watch-streams")}
+      >
         Watch Streams
       </button>
     </div>
